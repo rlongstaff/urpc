@@ -1,0 +1,44 @@
+GOALS
+    Lightweight request/response protocol
+    Transport agnostic: bluetooth, UDP
+    No heap allocations in C client/server
+    Compile-time packet size/buffer overrides
+    Basic authentication
+    Encryption support
+    Client-driven version selection
+
+NON-GOALS
+    Session state (intially)
+    Detailed Authn/Authz
+    Bidirectional communication
+
+Initial implementation
+    64-byte packets by default
+        4x 16 byte block alignment for encryption
+        byte 0-3: 3-byte magic 'uRPC'
+        byte 4: Flags (bit field)
+            bit 0: request/reply
+            bit 1: error
+        byte 5-6: request id
+        byte 7: RPC #
+        bytes 8-63: payload
+    Registration call
+        Reserved RPC
+            initial call and response are tied to protocol version
+        rpc #0
+        payload is registration config/params
+        response
+            sucess/fail:
+                OK if magic and version check out
+                "Unsupported version" if magic checks, but ver does not
+                No response if magic fails to disrupt encryption / auth attacks
+            capabilities:
+                Encryption enabled?
+    Security
+        Session ID
+            *to be time-tracked in later implementations
+            Randomly generated
+            returned as part of registration
+        Resistance to replay attacks?
+            embedded environment limits tools such as MAC
+        Only care about encrypted packets on network connections?
