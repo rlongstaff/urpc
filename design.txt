@@ -15,12 +15,14 @@ NON-GOALS
 Initial implementation
     64-byte packets by default
         4x 16 byte block alignment for encryption
-        byte 0-3: 3-byte magic 'uRPC'
-        byte 4: Flags (bit field)
+        2 byte: request id
+        1 byte: RPC #
+        1 byte: Flags (bit field)
             bit 0: request/reply
             bit 1: error
-        byte 5-6: request id
-        byte 7: RPC #
+        1 byte: reserved
+        2 byte: payload length
+        1 byte: CRC8 of header; alignment verification
         bytes 8-63: payload
     Registration call
         Reserved RPC
