@@ -10,22 +10,35 @@ use uRPC::Message::Response;
 package uRPC::Server;
 use parent 'uRPC::Base';
 
-my $LISTEN_ADDR = '127.0.0.1';
-my $LISTEN_PORT = 31415;
-my $MAX_PACKET_SIZE = 64; #TODO location?
+my $DEFAULT_MAX_PACKET_SIZE = 64;
 
 sub _init {
     my $self = shift;
     my %args = @_;
 
+    $self->{_listen_addr} = $args{ListenAddr};
+    $self->{_listen_port} = $args{ListenPort};
+    $self->{_max_packet_size} = $args{MaxPacketSize};
+    unless ($self->{_max_packet_size}) {
+        $self->{_max_packet_size} = $DEFAULT_MAX_PACKET_SIZE;
+    }
+
     return $self->SUPER::_init(@_);
 }
 
-sub handle_rpc {
+sub listen_addr {
     my $self = shift;
-    my ($req) = @_;
+    return $self->{_listen_addr};
+}
 
-    return rpc_echo($req);
+sub listen_port {
+    my $self = shift;
+    return $self->{_listen_port};
+}
+
+sub max_packet_size {
+    my $self = shift;
+    return $self->{_max_packet_size};
 }
 
 sub rpc_register {
@@ -37,31 +50,21 @@ sub rpc_register {
     return $res;
 }
 
-sub rpc_echo {
-    my $self = shift;
-    my ($req) = @_;
-
-    my $res = uRPC::Message::Response->new();
-    unless ($req) {
-        $res->error("bad request");
-    } else {
-        $res->payload($req->payload());
-    }
-    return $res;
- }
+sub handle_rpc { }
 
 sub run {
     my $self = shift;
 
     my $sock = IO::Socket::INET->new(
-        LocalAddr => $LISTEN_ADDR,
-        LocalPort => $LISTEN_PORT,
+        LocalAddr => $self->listen_addr(),
+        LocalPort => $self->listen_port(),
         Proto => 'udp',
         ReusePort => 1,
-    ) or die "Could not listen on '$LISTEN_ADDR:$LISTEN_PORT': $@";
+    ) or die "Could not listen on '" .
+        $self->listen_addr() . ":" .  $self->listen_port() . "': $@";
 
     my $msg_buf;
-    while ($sock->recv($msg_buf, $MAX_PACKET_SIZE)) {
+    while ($sock->recv($msg_buf, $self->max_packet_size())) {
         my($port, $host) = Socket::sockaddr_in($sock->peername);
         print "Packet from $host:$port\n";
         my $req = uRPC::Message::Request->new(Raw => $msg_buf);
@@ -70,7 +73,7 @@ sub run {
         if ($req->rpc() == 0) {
             $res = $self->rpc_register($req);
         } else {
-            $res = $self->rpc_echo($req);
+            $res = $self->handle_rpc($req);
         }
         $sock->send($res->serialize());
     }

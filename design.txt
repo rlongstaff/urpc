@@ -44,3 +44,6 @@ Initial implementation
         Resistance to replay attacks?
             embedded environment limits tools such as MAC
         Only care about encrypted packets on network connections?
+    CRC polynomial selection
+        http://users.ece.cmu.edu/~koopman/roses/dsn04/koopman04_crc_poly_embedded.pdf
+        CRC-8 poly: 0xEA, 0x97 0x96*

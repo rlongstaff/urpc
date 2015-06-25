@@ -9,10 +9,12 @@ my $client = uRPC::Client->new();
 
 my $host = '127.0.0.1';
 my $port = 31415;
-my $response = $client->register($host, $port);
+$client->connect($host, $port);
+
+my $response = $client->register();
 
 if ($response->is_error()) {
-    print "failed to register: $response\n";
+    print "failed to register: " . $response->payload() . "\n";
 }
 
 my $session = $client->session_id();
