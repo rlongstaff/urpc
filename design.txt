@@ -15,6 +15,9 @@ NON-GOALS
 Initial implementation
     64-byte packets by default
         4x 16 byte block alignment for encryption
+        Encryption envelope
+            4 byte: client id
+            2 byte: payload length
         2 byte: request id
         1 byte: RPC #
         1 byte: Flags (bit field)
@@ -24,6 +27,7 @@ Initial implementation
         2 byte: payload length
         1 byte: CRC8 of header; alignment verification
         bytes 8-63: payload
+
     Registration call
         Reserved RPC
             initial call and response are tied to protocol version
