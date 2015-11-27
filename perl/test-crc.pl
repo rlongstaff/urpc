@@ -6,39 +6,57 @@ use strict;
 use Digest::CRC qw(crc8);
 use Time::HiRes qw(gettimeofday tv_interval);
 
+use uRPC::Message;
+
 my $MSG = 'abcdefghijklmnopqrstuvwxyz';
-my $POLY = 0x07;
-#my $POLY = 0x9c;
 
-#printf("msg:  %s\nPOLY: %X\ncrc:  %X\n", $MSG, $POLY, crc8($MSG, 1, $POLY));
-#print "CRC : " . my_crc8($MSG, length($MSG), $POLY) . "\n";
-#print "DCRC: " . crc8($MSG) . "\n";
+test_crc();
 
-my %funcz = (
-    'Digest::CRC' => \&crc8,
-    'my_crc8'     => \&my_crc8,
-    'crc8_str'    => \&crc8_str,
-);
-
-my $iter = 10_000;
-my ($t0, $elapsed);
-
-foreach my $f (sort keys %funcz) {
-    $t0 = [gettimeofday];
-    for (1 .. $iter) {
-        &{$funcz{$f}}($MSG);
-    }
-    $elapsed = tv_interval($t0, [gettimeofday]);
-    print "$f: $elapsed\n";
+sub test_crc {
+	my $sum = uRPC::Message::crc8($MSG, $uRPC::Message::CRC_POLYNOMIAL);
+	if ($sum != 0x90) {
+		print "FAIL: '$MSG' => $sum\n";
+	} else {
+		print "SUCCESS\n";
+	}
+	return;
+	my $new_msg = reverse $MSG;
+	$sum = uRPC::Message::crc8($new_msg, $uRPC::Message::CRC_POLYNOMIAL);
+	if ($sum != 0x96) {
+		print "FAIL: '$new_msg' => $sum\n";
+	} else {
+		print "SUCCESS\n";
+	}
+	
 }
-$t0 = [gettimeofday];
-for (1 .. $iter) {
-    #crc8_opt(join('', map{ord} split(//,$MSG)));
-    crc8_opt($MSG);
+
+sub benchmark {
+	my %funcz = (
+	    'Digest::CRC' => \&crc8,
+	    'my_crc8'     => \&my_crc8,
+	    'crc8_str'    => \&crc8_str,
+	);
+	
+	my $iter = 10_000;
+	my ($t0, $elapsed);
+	
+	foreach my $f (sort keys %funcz) {
+	    $t0 = [gettimeofday];
+	    for (1 .. $iter) {
+	        &{$funcz{$f}}($MSG);
+	    }
+	    $elapsed = tv_interval($t0, [gettimeofday]);
+	    print "$f: $elapsed\n";
+	}
+	$t0 = [gettimeofday];
+	for (1 .. $iter) {
+	    #crc8_opt(join('', map{ord} split(//,$MSG)));
+	    crc8_opt($MSG);
+	}
+	$elapsed = tv_interval($t0, [gettimeofday]);
+	print "crc_opt: $elapsed\n";
+	print crc8_opt($MSG) . "\n";
 }
-$elapsed = tv_interval($t0, [gettimeofday]);
-print "crc_opt: $elapsed\n";
-print crc8_opt($MSG) . "\n";
 
 sub my_crc8 {
     my ($msg) = @_;
@@ -52,7 +70,7 @@ sub my_crc8 {
         for my $i (0..7) {
             if ($crc & 0x80) {
                 $crc = ($crc << 1) & 0xFF;
-                $crc ^= $POLY;
+                $crc ^= $uRPC::Message::CRC_POLYNOMIAL;
             } else {
                 $crc = ($crc << 1) & 0xFF;
             }
@@ -75,7 +93,7 @@ sub crc8_opt {
         for my $i (0..7) {
             if ($crc & 0x80) {
                 $crc = ($crc << 1) & 0xFF;
-                $crc ^= $POLY;
+                $crc ^= $uRPC::Message::CRC_POLYNOMIAL;
             } else {
                 $crc = ($crc << 1) & 0xFF;
             }

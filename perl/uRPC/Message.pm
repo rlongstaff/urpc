@@ -8,7 +8,7 @@ use parent 'uRPC::Base';
 use constant MESSAGE_REQUEST => 0;
 use constant MESSAGE_RESPONSE => 1;
 
-my $CRC_POLYNOMIAL = 0x96;
+our $CRC_POLYNOMIAL = 0x96;
 
 my $FLAGS_MSG_TYPE = 0;
 my $FLAGS_ERROR = 1;
@@ -74,25 +74,25 @@ sub error {
 sub serialize {
     my $self = shift;
 
+    # 2 byte: payload length
     # 2 byte: request id
     # 1 byte: RPC #
     # 1 byte: Flags (bit field)
     #     bit 0: request/reply
     #     bit 1: error
     # 1 byte: reserved
-    # 2 byte: payload length
     # 1 byte: CRC8 of headers for alignment verification
 
     my $flags;
     vec($flags, $FLAGS_MSG_TYPE, 1) = $self->{_message_type};
     vec($flags, $FLAGS_ERROR, 1) = $self->{_error};
 
-    my $header = pack('SCaCS',
+    my $header = pack('SSCaC',
+        length($self->payload()),
         $self->request_id(),
         $self->rpc(),
         $flags,
         0, # reserved
-        length($self->payload()),
     );
     return pack('a7Ca*',
         $header,
@@ -111,13 +111,13 @@ sub deserialize {
         return 0;
     }
 
-    my ($request_id,
+    my ($payload_length,
+        $request_id,
         $rpc,
         $flags,
         undef, # reserved
-        $payload_length,
         $header_crc,
-        $payload) = unpack('SCaCSCa*', $buf);
+        $payload) = unpack('SSCaCCa*', $buf);
 
     $self->request_id($request_id);
     $self->rpc($rpc);
