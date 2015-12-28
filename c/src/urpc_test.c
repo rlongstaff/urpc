@@ -14,12 +14,11 @@ static void test_message_crc(void **state) {
     uint8_t crc;
     char *msg = "abcdefghijklmnopqrstuvwxyz\0";
     char *msg2 = "zyxwvutsrqponmlkjihgfedcba\0";
-    crc = _crc8(msg, strlen(msg), _URPC_CRC_POLY);
+    crc = _urpc_crc8(msg, strlen(msg), _URPC_CRC_POLY);
     assert_int_equal(crc, 0x90);
-    crc = _crc8(msg2, strlen(msg), _URPC_CRC_POLY);
+    crc = _urpc_crc8(msg2, strlen(msg), _URPC_CRC_POLY);
     assert_int_equal(crc, 0x96);
 }
-
 
 int main (int argc, char **argv) {
     const struct CMUnitTest tests[] = {
