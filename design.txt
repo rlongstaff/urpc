@@ -17,25 +17,53 @@ Initial implementation
         64K max packets
     encryption optional for tiny platforms
         PSK AES?
-    4x 16 byte block alignment for encryption
-    Encryption envelope
-        ? protocol version id
-        4 byte: client id
-        2 byte: payload length
-        1 byte: CRC8
-        1 byte: reserved
-    ? protocol version id
-    2 byte: payload length
-    2 byte: request id
-    1 byte: RPC #
-    1 byte: Flags (bit field)
-        bit 0: request/reply
-        bit 1: error
-    1 byte: reserved
-    1 byte: CRC8 of header; alignment verification
+    16 byte block alignment for encryption
 
-    encrypted: bytes 16-63 payload
-    raw: bytes 8-63: payload
+    v0.1
+        encryption envelope
+            2 byte: session id
+            2 byte: padded length
+        header
+            1 byte: protocol version id
+            1 byte: RPC #
+            2 byte: request id
+            2 byte: data length
+            1 byte: Flags (bit field)
+                bit 0: request/reply
+                bit 1: error
+            1 byte: CRC8 of header; alignment verification
+        data
+    v0.2
+        Encryption envelope
+            ? protocol version id
+            4 byte: client id
+            2 byte: payload length
+            1 byte: CRC8
+            1 byte: reserved
+        ? protocol version id
+        2 byte: payload length
+        2 byte: request id
+        1 byte: RPC #
+        1 byte: Flags (bit field)
+            bit 0: request/reply
+            bit 1: error
+        1 byte: reserved
+        1 byte: CRC8 of header; alignment verification
+
+        encrypted: bytes 16-63 payload
+        raw: bytes 8-63: payload
+    v0.3
+        encryption envelope
+            4 byte id; client id on reg, session id follows
+        1 protocol version id
+        2 byte: payload length
+        2 byte: request id
+        1 byte: RPC #
+        1 byte: Flags (bit field)
+            bit 0: request/reply
+            bit 1: error
+        1 byte: CRC8 of header; alignment verification
+
 
     Registration call
         Reserved RPC
@@ -61,20 +89,16 @@ Initial implementation
         http://users.ece.cmu.edu/~koopman/roses/dsn04/koopman04_crc_poly_embedded.pdf
         CRC-8 poly: 0xEA, 0x97 0x96*
 
-protocol revamp; resistance to replay?
-envelope
-    4 byte: session id / flags? 2 byte?
-    2 byte: payload length
-    1 byte: protocol version id
-    1 byte: CRC8 of header; alignment verification
-payload
-    2 byte: request id
-    1 byte: RPC #
-    1 byte: Flags (bit field)
-        bit 0: request/reply
-        bit 1: error
-    4 byte: reserved
-        timestamp?
-            who drives? devices with no RTC?
-    data
+protocol revamp
+    (message) read message
+    read id, length
+    read 16 byte chunk
+    decrypt and verify header
+        on error
+            reply
+            (stream) close socket
+    Client keys
+        client id sent in registration data
+        key selected from server database
+        session id created and key associated
 
