@@ -27,6 +27,7 @@ static void test_urpc_connect(void **state) {
     (void) state; /* unused */
     urpc_endpoint_eth_udp endpoint;
     urpc_connection_eth_udp conn;
+    urpc_frame frame;
 
     const urpc_stub *stub = urpc_eth_udp_get_stub();
 
@@ -36,13 +37,14 @@ static void test_urpc_connect(void **state) {
 
     assert_int_equal(urpc_init_client(stub), URPC_SUCCESS);
 
-	uint8_t status = urpc_connect(stub, (urpc_endpoint *)&endpoint, (urpc_connection *)&conn);
+	uint8_t status = urpc_connect(stub, (urpc_endpoint *)&endpoint, (urpc_connection *)&conn, &frame);
     assert_int_equal(status, URPC_SUCCESS);
 }
 
 static void test_udp_send(void **state) {
     urpc_endpoint_eth_udp endpoint;
     urpc_connection_eth_udp conn;
+    urpc_frame frame;
 
     const urpc_stub *stub = urpc_eth_udp_get_stub();
 
@@ -52,14 +54,13 @@ static void test_udp_send(void **state) {
 
     assert_int_equal(urpc_init_client(stub), URPC_SUCCESS);
 
-	uint8_t status = urpc_connect(stub, (urpc_endpoint *)&endpoint, (urpc_connection *)&conn);
+	uint8_t status = urpc_connect(stub, (urpc_endpoint *)&endpoint, (urpc_connection *)&conn, &frame);
     assert_int_equal(status, URPC_SUCCESS);
 
-    urpc_message msg;
     char *payload = "FOO\0";
-    urpc_set_payload(&msg, payload, strlen(payload));
+    urpc_set_payload(&(frame.rpc_buf.rpc), payload, strlen(payload));
 
-    assert_int_equal(urpc_send(stub, (urpc_connection *)&conn, &msg), URPC_SUCCESS);
+    assert_int_equal(urpc_send(stub, (urpc_connection *)&conn, &frame), URPC_SUCCESS);
 
 }
 

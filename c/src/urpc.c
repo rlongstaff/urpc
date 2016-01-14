@@ -13,24 +13,32 @@ uint8_t urpc_init_server(const urpc_stub *stub, const urpc_endpoint *endpoint) {
 	return stub->init_server(endpoint);
 }
 
-uint8_t urpc_accept(const urpc_stub *stub, urpc_connection *conn) {
-	return stub->accept(conn);
-}
-uint8_t urpc_connect(const urpc_stub *stub, urpc_endpoint *endpoint, urpc_connection *conn) {
-	return stub->connect(endpoint, conn);
+uint8_t urpc_accept(const urpc_stub *stub, urpc_connection *conn, urpc_frame *frame) {
+	return stub->accept(conn, frame);
+
+	/*
+	 * TODO perform challenge-response hanshake
+	 */
 }
 
-uint8_t urpc_send(const urpc_stub *stub, const urpc_connection *conn, const urpc_message *msg) {
+uint8_t urpc_connect(const urpc_stub *stub, urpc_endpoint *endpoint, urpc_connection *conn, urpc_frame *frame) {
+	return stub->connect(endpoint, conn, frame);
+	/*
+	 * TODO perform challenge-response hanshake
+	 */
+}
+
+uint8_t urpc_send(const urpc_stub *stub, const urpc_connection *conn, urpc_frame *frame) {
 	/*
 	 * send client/session id
 	 * maybe encrypt payload
 	 * call stub->send
 	 */
-	stub->_send(conn, msg->payload, msg->header.payload_len);
+	stub->_send(conn, frame->rpc_buf.rpc.payload, frame->rpc_buf.rpc.header.payload_len);
 	return URPC_SUCCESS;
 }
 
-uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_message *msg) {
+uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_frame *frame) {
 	/*
 	 * recv 2 byte client/session id
 	 * read 16 bytes
@@ -38,13 +46,13 @@ uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_messa
 	 * decode header
 	 * read 16 byte chunks until msg->len, maybe decrypt
 	 */
-	stub->_recv(conn, msg->payload, _URPC_MAX_PAYLOAD_SIZE);
+	stub->_recv(conn, frame->rpc_buf.rpc.payload, _URPC_MAX_PAYLOAD_SIZE);
 	return URPC_SUCCESS;
 }
 
-uint8_t urpc_set_payload(urpc_message *msg, const char *payload, uint16_t len) {
-	memcpy(msg->payload, payload, len);
-	msg->header.payload_len = len;
+uint8_t urpc_set_payload(urpc_rpc *rpc, const char *payload, uint16_t len) {
+	memcpy(rpc->payload, payload, len);
+	rpc->header.payload_len = len;
 	return URPC_SUCCESS;
 }
 

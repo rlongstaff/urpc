@@ -43,11 +43,11 @@ uint8_t urpc_eth_udp_init_server(const urpc_endpoint *endpoint) {
 	return URPC_SUCCESS;
 }
 
-uint8_t urpc_eth_udp_accept(urpc_connection *conn) {
+uint8_t urpc_eth_udp_accept(urpc_connection *conn, urpc_frame *frame) {
 	return URPC_SUCCESS;
 }
 
-uint8_t urpc_eth_udp_connect(urpc_endpoint *s_endpoint, urpc_connection *s_conn) {
+uint8_t urpc_eth_udp_connect(urpc_endpoint *s_endpoint, urpc_connection *s_conn, urpc_frame *frame) {
 	urpc_connection_eth_udp *conn = (urpc_connection_eth_udp *)s_conn;
 	urpc_endpoint_eth_udp *endpoint = (urpc_endpoint_eth_udp *)s_endpoint;
 
@@ -81,6 +81,22 @@ uint8_t urpc_eth_udp_send(const urpc_connection *s_conn, const uint8_t *buf, uin
 	return URPC_SUCCESS;
 }
 
-uint8_t urpc_eth_udp_recv(const urpc_connection *conn, uint8_t *buf, uint16_t len) {
+uint8_t urpc_eth_udp_recv(const urpc_connection *s_conn, uint8_t *buf, uint16_t len) {
+	urpc_connection_eth_udp *conn = (urpc_connection_eth_udp *)s_conn;
+	ssize_t recv_bytes = 0;
+	ssize_t total_bytes = 0;
+	struct sockaddr_in address;
+	socklen_t address_len;
+
+	while (total_bytes < len) {
+		recv_bytes = recvfrom(conn->fd, buf, len, 0, (struct sockaddr *)&address, &address_len);
+		if (recv_bytes == -1) {
+			return URPC_ERROR;
+		}
+		total_bytes += recv_bytes;
+		buf += recv_bytes;
+		len -= recv_bytes;
+	}
+
 	return URPC_SUCCESS;
 }
