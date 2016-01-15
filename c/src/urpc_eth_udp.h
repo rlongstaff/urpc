@@ -30,6 +30,7 @@ uint8_t urpc_eth_udp_init_server(const urpc_endpoint *endpoint);
 uint8_t urpc_eth_udp_accept(urpc_connection *conn, urpc_frame *frame);
 uint8_t urpc_eth_udp_connect(urpc_endpoint *endpoint, urpc_connection *conn, urpc_frame *frame);
 uint8_t urpc_eth_udp_send(const urpc_connection *conn, const uint8_t *buf, uint16_t len);
+uint8_t urpc_eth_udp_peek(const urpc_connection *conn, uint8_t *buf, uint16_t len);
 uint8_t urpc_eth_udp_recv(const urpc_connection *conn, uint8_t *buf, uint16_t len);
 
 extern const urpc_stub URPC_ETH_UDP_STUB;

@@ -8,15 +8,30 @@
 
 #include <stdint.h>
 
-#ifndef URPC_MAX_FRAME_SIZE
-#define URPC_MAX_FRAME_SIZE 64
-#endif /* URPC_MAX_MESSAGE_SIZE */
+/*
+ * Block ciphers operate in set block sizes. The AES that is used here works
+ * on 16 byte blocks. So that we can encrypt/decrypt in place, we keep the
+ * frame size in a set multiple of chunks for the frame payload.
+ */
+#define _URPC_CHUNK_SIZE 16
 
-#define _URPC_MAX_PAYLOAD_SIZE URPC_MAX_FRAME_SIZE - sizeof(struct urpc_rpc_header) - sizeof(struct urpc_frame_header)
+/*
+ * Allow users to override the max frame size by overriding the number of
+ * chunks per frame. Default to a 64 byte frame payload.
+ */
+#ifndef URPC_MAX_FRAME_CHUNKS
+#define URPC_MAX_FRAME_CHUNKS 4
+#endif /* URPC_MAX_FRAME_CHUNKS */
+
+#define _URPC_MAX_FRAME_SIZE URPC_MAX_FRAME_CHUNKS * _URPC_CHUNK_SIZE + sizeof(struct urpc_frame_header)
+
+#define _URPC_MAX_PAYLOAD_SIZE _URPC_MAX_FRAME_SIZE - sizeof(struct urpc_rpc_header) - sizeof(struct urpc_frame_header)
 #define _URPC_CRC_POLY 0x96
 
 #define URPC_ERROR 0
 #define URPC_SUCCESS 1
+#define URPC_INVALID_CRC 2
+#define URPC_RPC_TOO_LARGE 3
 #define URPC_ERROR_UNKNOWN 255
 
 #define URPC_TRANSPORT_SERIAL 0
@@ -44,15 +59,15 @@ typedef struct urpc_rpc {
     uint8_t payload[_URPC_MAX_PAYLOAD_SIZE];
 } urpc_rpc;
 
-typedef union urpc_rpc_buffer {
-	urpc_rpc rpc;
-	uint8_t _raw[URPC_MAX_FRAME_SIZE];
-} urpc_rpc_buffer;
-
 typedef struct urpc_frame {
 	urpc_frame_header header;
-	urpc_rpc_buffer rpc_buf;
+	urpc_rpc rpc;
 } urpc_frame;
+
+typedef union urpc_frame_buffer {
+	urpc_frame frame;
+	uint8_t _raw[_URPC_MAX_FRAME_SIZE];
+} urpc_frame_buffer;
 
 typedef struct urpc_endpoint {
 	uint8_t transport;
@@ -68,6 +83,7 @@ typedef struct urpc_stub {
 	uint8_t (*accept)(urpc_connection *conn, urpc_frame *frame);
 	uint8_t (*connect)(urpc_endpoint *endpoint, urpc_connection *conn, urpc_frame *frame);
 	uint8_t (*_send)(const urpc_connection *conn, const uint8_t *buf, uint16_t len);
+	uint8_t (*_peek)(const urpc_connection *conn, uint8_t *buf, uint16_t len);
 	uint8_t (*_recv)(const urpc_connection *conn, uint8_t *buf, uint16_t len);
 } urpc_stub;
 
@@ -80,8 +96,9 @@ uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_frame
 
 uint8_t urpc_set_payload(urpc_rpc *rpc, const char *payload, uint16_t len);
 
-uint8_t _urpc_crc8(const char *msg,
-				   uint32_t msg_len,
-				   const uint8_t poly);
+void print_frame(const urpc_frame *frame);
+
+uint16_t _urpc_rpc_padded_size(uint16_t payload_length);
+uint8_t _urpc_crc8(const uint8_t *msg, uint32_t msg_len);
 
 #endif /* URPC_H_ */
