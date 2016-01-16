@@ -51,40 +51,40 @@ typedef struct urpc_rpc_header {
 } urpc_rpc_header;
 
 typedef struct urpc_frame_header {
-	uint32_t session;
+    uint32_t session;
 } urpc_frame_header;
 
 typedef struct urpc_rpc {
-	urpc_rpc_header header;
+    urpc_rpc_header header;
     uint8_t payload[_URPC_MAX_PAYLOAD_SIZE];
 } urpc_rpc;
 
 typedef struct urpc_frame {
-	urpc_frame_header header;
-	urpc_rpc rpc;
+    urpc_frame_header header;
+    urpc_rpc rpc;
 } urpc_frame;
 
 typedef union urpc_frame_buffer {
-	urpc_frame frame;
-	uint8_t _raw[_URPC_MAX_FRAME_SIZE];
+    urpc_frame frame;
+    uint8_t _raw[_URPC_MAX_FRAME_SIZE];
 } urpc_frame_buffer;
 
 typedef struct urpc_endpoint {
-	uint8_t transport;
+    uint8_t transport;
 } urpc_endpoint;
 
 typedef struct urpc_connection {
-	uint32_t id; // TODO this seems redundant
+    uint32_t id; // TODO this seems redundant
 } urpc_connection;
 
 typedef struct urpc_stub {
-	uint8_t (*init_client)(void);
-	uint8_t (*init_server)(const urpc_endpoint *endpoint);
-	uint8_t (*accept)(urpc_connection *conn, urpc_frame *frame);
-	uint8_t (*connect)(urpc_endpoint *endpoint, urpc_connection *conn, urpc_frame *frame);
-	uint8_t (*_send)(const urpc_connection *conn, const uint8_t *buf, uint16_t len);
-	uint8_t (*_peek)(const urpc_connection *conn, uint8_t *buf, uint16_t len);
-	uint8_t (*_recv)(const urpc_connection *conn, uint8_t *buf, uint16_t len);
+    uint8_t (*init_client)(void);
+    uint8_t (*init_server)(const urpc_endpoint *endpoint);
+    uint8_t (*accept)(urpc_connection *conn, urpc_frame *frame);
+    uint8_t (*connect)(urpc_endpoint *endpoint, urpc_connection *conn, urpc_frame *frame);
+    uint8_t (*_send)(const urpc_connection *conn, const uint8_t *buf, uint16_t len);
+    uint8_t (*_peek)(const urpc_connection *conn, uint8_t *buf, uint16_t len);
+    uint8_t (*_recv)(const urpc_connection *conn, uint8_t *buf, uint16_t len);
 } urpc_stub;
 
 uint8_t urpc_init_client(const urpc_stub *stub);

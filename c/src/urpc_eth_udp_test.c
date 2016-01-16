@@ -37,7 +37,7 @@ static void test_urpc_connect(void **state) {
 
     assert_int_equal(urpc_init_client(stub), URPC_SUCCESS);
 
-	uint8_t status = urpc_connect(stub, (urpc_endpoint *)&endpoint, (urpc_connection *)&conn, &frame);
+    uint8_t status = urpc_connect(stub, (urpc_endpoint *)&endpoint, (urpc_connection *)&conn, &frame);
     assert_int_equal(status, URPC_SUCCESS);
 }
 
@@ -56,7 +56,7 @@ static void test_udp_echo(void **state) {
 
     assert_int_equal(urpc_init_client(stub), URPC_SUCCESS);
 
-	uint8_t status = urpc_connect(stub, (urpc_endpoint *)&endpoint, (urpc_connection *)&conn, &frame);
+    uint8_t status = urpc_connect(stub, (urpc_endpoint *)&endpoint, (urpc_connection *)&conn, &frame);
     assert_int_equal(status, URPC_SUCCESS);
 
     char *payload = "abcdefghijklmnopqrstuvwxyz\0";
@@ -70,8 +70,8 @@ static void test_udp_echo(void **state) {
 
 int main (int argc, char **argv) {
     const struct CMUnitTest tests[] = {
-		cmocka_unit_test(test_urpc_connect),
-		cmocka_unit_test(test_udp_echo),
+        cmocka_unit_test(test_urpc_connect),
+        cmocka_unit_test(test_udp_echo),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

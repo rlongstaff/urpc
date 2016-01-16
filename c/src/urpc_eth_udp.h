@@ -13,15 +13,15 @@
 #include "urpc.h"
 
 typedef struct urpc_endpoint_eth_udp {
-	urpc_endpoint super;
-	char ip[15];
-	in_port_t port;
+    urpc_endpoint super;
+    char ip[15];
+    in_port_t port;
 } urpc_endpoint_eth_udp;
 
 typedef struct urpc_connection_eth_udp {
-	urpc_connection super;
-	struct sockaddr_in addr;
-	int fd;
+    urpc_connection super;
+    struct sockaddr_in addr;
+    int fd;
 } urpc_connection_eth_udp;
 
 const urpc_stub *urpc_eth_udp_get_stub(void);

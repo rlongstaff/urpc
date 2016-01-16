@@ -21,93 +21,93 @@
 
 /* Note that this would be PROGMEM for embedded platformds */
 const urpc_stub URPC_ETH_UDP_STUB = {
-	.init_client = &urpc_eth_udp_init_client,
-	.init_server = &urpc_eth_udp_init_server,
-	.accept      = &urpc_eth_udp_accept,
-	.connect     = &urpc_eth_udp_connect,
-	._send       = &urpc_eth_udp_send,
-	._peek       = &urpc_eth_udp_peek,
-	._recv       = &urpc_eth_udp_recv,
+    .init_client = &urpc_eth_udp_init_client,
+    .init_server = &urpc_eth_udp_init_server,
+    .accept      = &urpc_eth_udp_accept,
+    .connect     = &urpc_eth_udp_connect,
+    ._send       = &urpc_eth_udp_send,
+    ._peek       = &urpc_eth_udp_peek,
+    ._recv       = &urpc_eth_udp_recv,
 };
 
 const urpc_stub *urpc_eth_udp_get_stub(void) {
-	return &URPC_ETH_UDP_STUB;
+    return &URPC_ETH_UDP_STUB;
 }
 
 uint8_t urpc_eth_udp_init_client(void) {
-	return URPC_SUCCESS;
+    return URPC_SUCCESS;
 }
 
 uint8_t urpc_eth_udp_init_server(const urpc_endpoint *endpoint) {
-	((urpc_endpoint_eth_udp *)endpoint)->super.transport = URPC_TRANSPORT_ETH_UDP;
+    ((urpc_endpoint_eth_udp *)endpoint)->super.transport = URPC_TRANSPORT_ETH_UDP;
 
-	return URPC_SUCCESS;
+    return URPC_SUCCESS;
 }
 
 uint8_t urpc_eth_udp_accept(urpc_connection *conn, urpc_frame *frame) {
-	return URPC_SUCCESS;
+    return URPC_SUCCESS;
 }
 
 uint8_t urpc_eth_udp_connect(urpc_endpoint *s_endpoint, urpc_connection *s_conn, urpc_frame *frame) {
-	urpc_connection_eth_udp *conn = (urpc_connection_eth_udp *)s_conn;
-	urpc_endpoint_eth_udp *endpoint = (urpc_endpoint_eth_udp *)s_endpoint;
+    urpc_connection_eth_udp *conn = (urpc_connection_eth_udp *)s_conn;
+    urpc_endpoint_eth_udp *endpoint = (urpc_endpoint_eth_udp *)s_endpoint;
 
-	endpoint->super.transport = URPC_TRANSPORT_ETH_UDP;
+    endpoint->super.transport = URPC_TRANSPORT_ETH_UDP;
 
-	bzero(conn, sizeof(urpc_connection_eth_udp));
-	conn->addr.sin_family = AF_INET;
-	conn->fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (conn->fd == -1) {
-	    printf("Failed to create socket\n");
-	    return URPC_ERROR;
-	}
+    bzero(conn, sizeof(urpc_connection_eth_udp));
+    conn->addr.sin_family = AF_INET;
+    conn->fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (conn->fd == -1) {
+        printf("Failed to create socket\n");
+        return URPC_ERROR;
+    }
 
-	if (inet_aton(endpoint->ip, &(conn->addr.sin_addr)) == 0) {
-		printf("Failed to parse IP: %s\n", endpoint->ip);
-		return URPC_ERROR;
-	}
-	conn->addr.sin_port = htons(endpoint->port);
-	return URPC_SUCCESS;
+    if (inet_aton(endpoint->ip, &(conn->addr.sin_addr)) == 0) {
+        printf("Failed to parse IP: %s\n", endpoint->ip);
+        return URPC_ERROR;
+    }
+    conn->addr.sin_port = htons(endpoint->port);
+    return URPC_SUCCESS;
 }
 
 uint8_t urpc_eth_udp_send(const urpc_connection *s_conn, const uint8_t *buf, uint16_t len) {
-	urpc_connection_eth_udp *conn = (urpc_connection_eth_udp *)s_conn;
+    urpc_connection_eth_udp *conn = (urpc_connection_eth_udp *)s_conn;
 
-	if (sendto(conn->fd, buf, len, 0,
-			(struct sockaddr *)&(conn->addr),
-			sizeof(struct sockaddr_in)) == -1) {
-	    printf("Oops:sendto\n");
-	}
+    if (sendto(conn->fd, buf, len, 0,
+            (struct sockaddr *)&(conn->addr),
+            sizeof(struct sockaddr_in)) == -1) {
+        printf("Oops:sendto\n");
+    }
 
-	return URPC_SUCCESS;
+    return URPC_SUCCESS;
 }
 
 uint8_t urpc_eth_udp_peek(const urpc_connection *conn, uint8_t *buf, uint16_t len) {
-	struct sockaddr_in address;
-	socklen_t address_len;
-	ssize_t recv_bytes = 0;
-	recv_bytes = recvfrom(((urpc_connection_eth_udp *)conn)->fd,
-			buf, len, MSG_PEEK, (struct sockaddr *)&address, &address_len);
-	if (recv_bytes == -1) {
-		return URPC_ERROR;
-	}
-	return URPC_SUCCESS;
+    struct sockaddr_in address;
+    socklen_t address_len;
+    ssize_t recv_bytes = 0;
+    recv_bytes = recvfrom(((urpc_connection_eth_udp *)conn)->fd,
+            buf, len, MSG_PEEK, (struct sockaddr *)&address, &address_len);
+    if (recv_bytes == -1) {
+        return URPC_ERROR;
+    }
+    return URPC_SUCCESS;
 }
 
 uint8_t urpc_eth_udp_recv(const urpc_connection *conn, uint8_t *buf, uint16_t len) {
-	struct sockaddr_in address;
-	socklen_t address_len;
-	ssize_t recv_bytes = 0;
+    struct sockaddr_in address;
+    socklen_t address_len;
+    ssize_t recv_bytes = 0;
 
-	while (recv_bytes < len) {
-		recv_bytes = recvfrom(((urpc_connection_eth_udp *)conn)->fd,
-				buf, len, 0, (struct sockaddr *)&address, &address_len);
-		if (recv_bytes == -1) {
-			return URPC_ERROR;
-		}
-		buf += recv_bytes;
-		len -= recv_bytes;
-	}
+    while (recv_bytes < len) {
+        recv_bytes = recvfrom(((urpc_connection_eth_udp *)conn)->fd,
+                buf, len, 0, (struct sockaddr *)&address, &address_len);
+        if (recv_bytes == -1) {
+            return URPC_ERROR;
+        }
+        buf += recv_bytes;
+        len -= recv_bytes;
+    }
 
-	return URPC_SUCCESS;
+    return URPC_SUCCESS;
 }
