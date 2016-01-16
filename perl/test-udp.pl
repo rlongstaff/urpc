@@ -8,7 +8,9 @@ use IO::Socket::INET;
 use uRPC::Message::Request;
 use uRPC::Message::Response;
 
-my $DEFAULT_MAX_PACKET_SIZE = 64;
+my $DEFAULT_MAX_PACKET_SIZE = 68;
+
+$| = 1;
 
 run();
 
@@ -24,7 +26,9 @@ sub run {
     while ($sock->recv($msg_buf, $DEFAULT_MAX_PACKET_SIZE)) {
         my($port, $host) = Socket::sockaddr_in($sock->peername);
         print "Packet from $host:$port\n";
+        print "recv len: " . length($msg_buf) . "\n";
         print "received: $msg_buf\n";
+        $sock->send($msg_buf);
     }
 }
 
