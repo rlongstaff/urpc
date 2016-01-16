@@ -34,6 +34,10 @@
 #define URPC_RPC_TOO_LARGE 3
 #define URPC_ERROR_UNKNOWN 255
 
+#define URPC_FLAG_ERROR 1
+#define URPC_FLAG_REPLY 2
+#define URPC_FLAG_CONTROL 4
+
 #define URPC_TRANSPORT_SERIAL 0
 #define URPC_TRANSPORT_BLUETOOTH 1
 #define URPC_TRANSPORT_ETH_UDP 2
@@ -96,8 +100,10 @@ uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_frame
 
 uint8_t urpc_set_payload(urpc_rpc *rpc, const char *payload, uint16_t len);
 
-void print_frame(const urpc_frame *frame);
+void _print_frame(const urpc_frame *frame);
 
+void _urpc_set_flag(urpc_rpc_header *rpc, uint8_t flags);
+void _urpc_clear_flag(urpc_rpc_header *rpc, uint8_t flags);
 uint16_t _urpc_rpc_padded_size(uint16_t payload_length);
 uint8_t _urpc_crc8(const uint8_t *msg, uint32_t msg_len);
 

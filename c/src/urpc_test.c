@@ -9,6 +9,18 @@
 #include "cmocka.h"
 #include "urpc.h"
 
+static void test_flags (void **state) {
+    (void) state; /* unused */
+    urpc_rpc_header rpc;
+    bzero(&rpc, sizeof(urpc_rpc_header));
+
+    assert_false(rpc.flags & URPC_FLAG_ERROR);
+    _urpc_set_flag(&rpc, URPC_FLAG_ERROR | URPC_FLAG_CONTROL);
+    assert_true(rpc.flags & URPC_FLAG_ERROR);
+    _urpc_clear_flag(&rpc, URPC_FLAG_ERROR);
+    assert_false(rpc.flags & URPC_FLAG_ERROR);
+    assert_true(rpc.flags & URPC_FLAG_CONTROL);
+}
 static void test_crc(void **state) {
     (void) state; /* unused */
     uint8_t crc;
@@ -31,9 +43,9 @@ static void test_rpc_padding(void **state) {
 
 int main (int argc, char **argv) {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_crc),
-        cmocka_unit_test(test_rpc_padding),
-
+            cmocka_unit_test(test_flags),
+            cmocka_unit_test(test_crc),
+            cmocka_unit_test(test_rpc_padding),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

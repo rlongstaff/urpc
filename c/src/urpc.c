@@ -114,6 +114,13 @@ void print_frame(const urpc_frame *frame) {
     printf("============\n");
 }
 
+inline void _urpc_set_flag(urpc_rpc_header *rpc, uint8_t flags) {
+    rpc->flags |= flags;
+}
+inline void _urpc_clear_flag(urpc_rpc_header *rpc, uint8_t flags) {
+    rpc->flags &= ~flags;
+}
+
 inline uint16_t _urpc_rpc_padded_size(uint16_t payload_length) {
     if ((sizeof(urpc_rpc_header) + payload_length) % _URPC_CHUNK_SIZE) {
         return _URPC_CHUNK_SIZE -
