@@ -5,24 +5,24 @@
 
 #include "urpc.h"
 
-uint8_t urpc_init_client(const urpc_stub *stub) {
-    return stub->init_client();
+uint8_t urpc_init_client(const urpc_stub *stub, urpc_client *client) {
+    return stub->init_client(client);
 }
 
-uint8_t urpc_init_server(const urpc_stub *stub, const urpc_endpoint *endpoint) {
-    return stub->init_server(endpoint);
+uint8_t urpc_init_server(const urpc_stub *stub, urpc_server *server, urpc_endpoint *endpoint) {
+    return stub->init_server(server, endpoint);
 }
 
-uint8_t urpc_accept(const urpc_stub *stub, urpc_connection *conn, urpc_frame *frame) {
-    return stub->accept(conn, frame);
+uint8_t urpc_accept(const urpc_stub *stub, urpc_server *server, urpc_connection *conn, urpc_frame *frame) {
+    return stub->accept(server, conn, frame);
 
     /*
      * TODO perform challenge-response handshake
      */
 }
 
-uint8_t urpc_connect(const urpc_stub *stub, urpc_endpoint *endpoint, urpc_connection *conn, urpc_frame *frame) {
-    return stub->connect(endpoint, conn, frame);
+uint8_t urpc_connect(const urpc_stub *stub, urpc_client *client, urpc_connection *conn, urpc_frame *frame) {
+    return stub->connect(client, conn, frame);
     /*
      * TODO perform challenge-response handshake.
      */

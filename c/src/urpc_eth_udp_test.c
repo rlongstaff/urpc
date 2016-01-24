@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -25,53 +26,76 @@
 
 static void test_urpc_connect(void **state) {
     (void) state; /* unused */
-    urpc_endpoint_eth_udp endpoint;
+    urpc_client client;
     urpc_connection_eth_udp conn;
     urpc_frame frame;
+
+    bzero(&client, sizeof(client));
+    bzero(&frame, sizeof(urpc_frame));
+    bzero(&conn, sizeof(urpc_connection_eth_udp));
 
     const urpc_stub *stub = urpc_eth_udp_get_stub();
 
     char *ip = "127.0.0.1\0";
-    strncpy(endpoint.ip, ip, strlen(ip));
-    endpoint.port = 31415;
+    conn.remote.addr.sin_port = htons(31415);
+    inet_aton(ip, &(conn.remote.addr.sin_addr));
 
-    assert_int_equal(urpc_init_client(stub), URPC_SUCCESS);
+    assert_int_equal(urpc_init_client(stub, &client), URPC_SUCCESS);
 
-    uint8_t status = urpc_connect(stub, (urpc_endpoint *)&endpoint, (urpc_connection *)&conn, &frame);
+    uint8_t status = urpc_connect(stub, &client, (urpc_connection *)&conn, &frame);
     assert_int_equal(status, URPC_SUCCESS);
 }
 
-static void test_udp_echo(void **state) {
-    urpc_endpoint_eth_udp endpoint;
-    urpc_connection_eth_udp conn;
-    urpc_frame frame;
+static void test_udp_send_recv(void **state) {
+    (void) state; /* unused */
+    urpc_client client;
+    urpc_server server;
+    urpc_frame client_frame, server_frame;
+    urpc_connection_eth_udp client_conn, server_conn;
+    urpc_endpoint_eth_udp client_endpoint, server_endpoint;
+
+    bzero(&client, sizeof(client));
+    bzero(&server, sizeof(server));
+    bzero(&client_frame, sizeof(urpc_frame));
+    bzero(&server_frame, sizeof(urpc_frame));
+    bzero(&client_conn, sizeof(urpc_connection_eth_udp));
+    bzero(&server_conn, sizeof(urpc_connection_eth_udp));
 
     const urpc_stub *stub = urpc_eth_udp_get_stub();
 
-    bzero(&frame, sizeof(urpc_frame));
-
     char *ip = "127.0.0.1\0";
-    strncpy(endpoint.ip, ip, strlen(ip));
-    endpoint.port = 31415;
+    int port = 31415;
 
-    assert_int_equal(urpc_init_client(stub), URPC_SUCCESS);
+    client_conn.remote.addr.sin_port = htons(port);
+    inet_aton(ip, &(client_conn.remote.addr.sin_addr));
 
-    uint8_t status = urpc_connect(stub, (urpc_endpoint *)&endpoint, (urpc_connection *)&conn, &frame);
+    server_conn.local.addr.sin_port = htons(port);
+    inet_aton(ip, &(server_conn.local.addr.sin_addr));
+
+    assert_int_equal(urpc_init_client(stub, &client), URPC_SUCCESS);
+    assert_int_equal(urpc_init_server(stub, &server, (urpc_endpoint *)&server_conn.local), URPC_SUCCESS);
+
+    uint8_t status = urpc_connect(stub, &client, (urpc_connection *)&client_conn, &client_frame);
     assert_int_equal(status, URPC_SUCCESS);
+
+    status = urpc_accept(stub, &server, (urpc_connection *)&server_conn, &server_frame);
 
     char *payload = "abcdefghijklmnopqrstuvwxyz\0";
-    urpc_set_payload(&(frame.rpc), payload, strlen(payload));
+    urpc_set_payload(&(client_frame.rpc), payload, strlen(payload));
 
-    assert_int_equal(urpc_send(stub, (urpc_connection *)&conn, &frame), URPC_SUCCESS);
-    bzero(&frame, sizeof(urpc_frame));
-    assert_int_equal(urpc_recv(stub, (urpc_connection *)&conn, &frame), URPC_SUCCESS);
+    assert_int_equal(urpc_send(stub, (urpc_connection *)&client_conn, &client_frame), URPC_SUCCESS);
+    assert_int_equal(urpc_recv(stub, (urpc_connection *)&server_conn, &server_frame), URPC_SUCCESS);
+    assert_string_equal(payload, &(server_frame.rpc.payload));
+    bzero(&client_frame, sizeof(urpc_frame));
+    assert_int_equal(urpc_send(stub, (urpc_connection *)&server_conn, &server_frame), URPC_SUCCESS);
+    assert_int_equal(urpc_recv(stub, (urpc_connection *)&client_conn, &client_frame), URPC_SUCCESS);
+    assert_string_equal(payload, &(client_frame.rpc.payload));
 }
-
 
 int main (int argc, char **argv) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_urpc_connect),
-        cmocka_unit_test(test_udp_echo),
+        cmocka_unit_test(test_udp_send_recv),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
