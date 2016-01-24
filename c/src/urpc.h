@@ -54,7 +54,7 @@ typedef struct urpc_rpc_header {
     uint16_t request_id;
     uint8_t rpc_num;
     uint8_t flags;
-    uint8_t reserved;
+    uint8_t payload_crc;
     uint8_t header_crc;
 } urpc_rpc_header;
 

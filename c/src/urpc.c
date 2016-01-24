@@ -34,6 +34,8 @@ uint8_t urpc_send(const urpc_stub *stub, const urpc_connection *conn, urpc_frame
     frame->header.session = htonl(frame->header.session);
     frame->rpc.header.payload_len = htons(frame->rpc.header.payload_len);
     frame->rpc.header.request_id = htons(frame->rpc.header.request_id);
+    frame->rpc.header.payload_crc = _urpc_crc8((uint8_t *)&(frame->rpc.payload),
+            payload_length);
     frame->rpc.header.header_crc = _urpc_crc8((uint8_t *)&(frame->rpc.header),
             sizeof(urpc_rpc_header) - sizeof(uint8_t));
     stub->_send(conn, ((urpc_frame_buffer *)frame)->_raw,
@@ -90,6 +92,12 @@ uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_frame
     memcpy(((urpc_frame_buffer *)frame)->_raw, peek_buf, sizeof(peek_buf));
 
     /* TODO decrypt remaining chunks*/
+
+    if(frame->rpc.header.payload_crc !=
+            _urpc_crc8((uint8_t *)&(frame->rpc.payload), frame->rpc.header.payload_len)) {
+        return URPC_INVALID_CRC;
+    }
+
     return status;
 }
 
@@ -103,15 +111,15 @@ uint8_t urpc_set_payload(urpc_rpc *rpc, const char *payload, uint16_t len) {
 }
 
 void print_frame(const urpc_frame *frame) {
-    printf("============\n");
-    printf("Session:  %d\n", frame->header.session);
-    printf("Request:  %d\n", frame->rpc.header.request_id);
-    printf("RPC:      %d\n", frame->rpc.header.rpc_num);
-    printf("Flags:    %d\n", frame->rpc.header.flags);
-    printf("Reserved: %d\n", frame->rpc.header.reserved);
-    printf("Length:   %d\n", frame->rpc.header.payload_len);
-    printf("CRC:      %d\n", frame->rpc.header.header_crc);
-    printf("============\n");
+    printf("===============\n");
+    printf("Session:     %d\n", frame->header.session);
+    printf("Request:     %d\n", frame->rpc.header.request_id);
+    printf("RPC:         %d\n", frame->rpc.header.rpc_num);
+    printf("Flags:       %d\n", frame->rpc.header.flags);
+    printf("Length:      %d\n", frame->rpc.header.payload_len);
+    printf("Payload CRC: %d\n", frame->rpc.header.payload_crc);
+    printf("Header CRC:  %d\n", frame->rpc.header.header_crc);
+    printf("===============\n");
 }
 
 inline void _urpc_set_flag(urpc_rpc_header *rpc, uint8_t flags) {
