@@ -59,6 +59,8 @@ typedef struct urpc_rpc_header {
 } urpc_rpc_header;
 
 typedef struct urpc_frame_header {
+    uint8_t version;
+    uint8_t flags;
     uint32_t session;
 } urpc_frame_header;
 
