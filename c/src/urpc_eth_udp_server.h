@@ -12,10 +12,10 @@
 #include "urpc_server.h"
 #include "urpc_eth_udp.h"
 
-const urpc_server_stub *urpc_eth_udp_get_server_stub(void);
+const urpc_server_stub* urpc_eth_udp_get_server_stub(void);
 
-uint8_t urpc_eth_udp_init_server(urpc_server *server, urpc_endpoint *endpoint);
-uint8_t urpc_eth_udp_accept(urpc_server *server, urpc_connection *conn, urpc_frame *frame);
+uint8_t urpc_eth_udp_init_server(urpc_server* server, urpc_endpoint* endpoint);
+uint8_t urpc_eth_udp_accept(urpc_server* server, urpc_connection* conn, urpc_frame* frame);
 
 
 #endif /* SRC_URPC_ETH_UDP_SERVER_H_ */

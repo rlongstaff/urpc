@@ -24,7 +24,7 @@
 #include "urpc_eth_udp_client.h"
 #include "urpc_eth_udp_server.h"
 
-static void test_urpc_connect(void **state) {
+static void test_urpc_connect(void** state) {
     (void) state; /* unused */
     urpc_client client;
     urpc_connection_eth_udp conn;
@@ -36,7 +36,7 @@ static void test_urpc_connect(void **state) {
 
     const urpc_client_stub *stub = urpc_eth_udp_get_client_stub();
 
-    char *ip = "127.0.0.1\0";
+    char* ip = "127.0.0.1\0";
     conn.remote.addr.sin_port = htons(31415);
     inet_aton(ip, &(conn.remote.addr.sin_addr));
 
@@ -46,7 +46,7 @@ static void test_urpc_connect(void **state) {
     assert_int_equal(status, URPC_SUCCESS);
 }
 
-static void test_udp_send_recv(void **state) {
+static void test_udp_send_recv(void** state) {
     (void) state; /* unused */
     urpc_client client;
     urpc_server server;
@@ -64,7 +64,7 @@ static void test_udp_send_recv(void **state) {
     const urpc_client_stub *client_stub = urpc_eth_udp_get_client_stub();
     const urpc_server_stub *server_stub = urpc_eth_udp_get_server_stub();
 
-    char *ip = "127.0.0.1\0";
+    char* ip = "127.0.0.1\0";
     int port = 31415;
 
     client_conn.remote.addr.sin_port = htons(port);
@@ -81,7 +81,7 @@ static void test_udp_send_recv(void **state) {
 
     status = urpc_accept(server_stub, &server, (urpc_connection *)&server_conn, &server_frame);
 
-    char *payload = "abcdefghijklmnopqrstuvwxyz\0";
+    char* payload = "abcdefghijklmnopqrstuvwxyz\0";
     urpc_set_payload(&(client_frame.rpc), payload, strlen(payload));
 
     assert_int_equal(urpc_send((urpc_stub *)client_stub, (urpc_connection *)&client_conn, &client_frame), URPC_SUCCESS);

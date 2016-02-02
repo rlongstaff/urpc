@@ -5,25 +5,22 @@
 
 #include "urpc.h"
 
-
-
-
-uint8_t urpc_send(const urpc_stub *stub, const urpc_connection *conn, urpc_frame *frame) {
+uint8_t urpc_send(const urpc_stub* stub, const urpc_connection* conn, urpc_frame* frame) {
     uint16_t payload_length = frame->rpc.header.payload_len;
 
     frame->header.session = htonl(frame->header.session);
     frame->rpc.header.payload_len = htons(frame->rpc.header.payload_len);
     frame->rpc.header.request_id = htons(frame->rpc.header.request_id);
-    frame->rpc.header.payload_crc = _urpc_crc8((uint8_t *)&(frame->rpc.payload),
+    frame->rpc.header.payload_crc = _urpc_crc8((uint8_t*)&(frame->rpc.payload),
             payload_length);
-    frame->rpc.header.header_crc = _urpc_crc8((uint8_t *)&(frame->rpc.header),
+    frame->rpc.header.header_crc = _urpc_crc8((uint8_t*)&(frame->rpc.header),
             sizeof(urpc_rpc_header) - sizeof(uint8_t));
-    stub->_send(conn, ((urpc_frame_buffer *)frame)->_raw,
+    stub->_send(conn, ((urpc_frame_buffer*)frame)->_raw,
             sizeof(urpc_frame_header) +    _urpc_rpc_padded_size(payload_length));
     return URPC_SUCCESS;
 }
 
-uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_frame *frame) {
+uint8_t urpc_recv(const urpc_stub* stub, const urpc_connection* conn, urpc_frame* frame) {
     /* The _recv stub will block until it reads a full message. To know exactly
      * how much of a message to wait for, we peek at the first chunk for the
      * payload length. We then pull the whole frame off the wire and splice the
@@ -39,7 +36,7 @@ uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_frame
     bzero(peek_buf, sizeof(urpc_frame_header) + _URPC_CHUNK_SIZE);
 
     stub->_peek(conn, peek_buf, sizeof(urpc_frame_header) + _URPC_CHUNK_SIZE);
-    peek_frame = (urpc_frame *) peek_buf;
+    peek_frame = (urpc_frame*) peek_buf;
     peek_frame->header.session = ntohl(peek_frame->header.session);
 
     /* TODO Lookup encryption key */
@@ -49,10 +46,10 @@ uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_frame
      * the header is valid.
      */
     if(peek_frame->rpc.header.header_crc !=
-            _urpc_crc8((uint8_t *)&(peek_frame->rpc.header),
+            _urpc_crc8((uint8_t*)&(peek_frame->rpc.header),
                     sizeof(urpc_rpc_header) - sizeof(uint8_t))) {
         /* Bzzzt. This isn't a good header. Flush the socket and walk away. */
-        stub->_recv(conn, ((urpc_frame_buffer *)frame)->_raw, 0);
+        stub->_recv(conn, ((urpc_frame_buffer*)frame)->_raw, 0);
         return URPC_INVALID_CRC;
     }
 
@@ -66,22 +63,22 @@ uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_frame
 
     /* We have a good header and we are ready to pull in the entire message. */
     bzero(frame, sizeof(urpc_frame));
-    stub->_recv(conn, ((urpc_frame_buffer *)frame)->_raw,
+    stub->_recv(conn, ((urpc_frame_buffer*)frame)->_raw,
             sizeof(urpc_frame_header) + _urpc_rpc_padded_size(peek_frame->rpc.header.payload_len));
     /* Copy our already-decrypted initial chunk into the destination frame. */
-    memcpy(((urpc_frame_buffer *)frame)->_raw, peek_buf, sizeof(peek_buf));
+    memcpy(((urpc_frame_buffer*)frame)->_raw, peek_buf, sizeof(peek_buf));
 
     /* TODO decrypt remaining chunks*/
 
     if(frame->rpc.header.payload_crc !=
-            _urpc_crc8((uint8_t *)&(frame->rpc.payload), frame->rpc.header.payload_len)) {
+            _urpc_crc8((uint8_t*)&(frame->rpc.payload), frame->rpc.header.payload_len)) {
         return URPC_INVALID_CRC;
     }
 
     return status;
 }
 
-uint8_t urpc_set_payload(urpc_rpc *rpc, const char *payload, uint16_t len) {
+uint8_t urpc_set_payload(urpc_rpc* rpc, const char* payload, uint16_t len) {
     if (len > _URPC_MAX_PAYLOAD_SIZE) {
         return URPC_RPC_TOO_LARGE;
     }
@@ -90,7 +87,7 @@ uint8_t urpc_set_payload(urpc_rpc *rpc, const char *payload, uint16_t len) {
     return URPC_SUCCESS;
 }
 
-void print_frame(const urpc_frame *frame) {
+void print_frame(const urpc_frame* frame) {
     printf("===============\n");
     printf("Session:     %d\n", frame->header.session);
     printf("Request:     %d\n", frame->rpc.header.request_id);
@@ -102,10 +99,10 @@ void print_frame(const urpc_frame *frame) {
     printf("===============\n");
 }
 
-inline void _urpc_set_flag(urpc_rpc_header *rpc, uint8_t flags) {
+inline void _urpc_set_flag(urpc_rpc_header* rpc, uint8_t flags) {
     rpc->flags |= flags;
 }
-inline void _urpc_clear_flag(urpc_rpc_header *rpc, uint8_t flags) {
+inline void _urpc_clear_flag(urpc_rpc_header* rpc, uint8_t flags) {
     rpc->flags &= ~flags;
 }
 

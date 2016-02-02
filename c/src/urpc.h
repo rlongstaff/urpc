@@ -86,21 +86,21 @@ typedef struct urpc_connection {
 } urpc_connection;
 
 typedef struct urpc_stub {
-    uint8_t (*_send)(const urpc_connection *conn, const uint8_t *buf, uint16_t len);
-    uint8_t (*_peek)(const urpc_connection *conn, uint8_t *buf, uint16_t len);
-    uint8_t (*_recv)(const urpc_connection *conn, uint8_t *buf, uint16_t len);
+    uint8_t (*_send)(const urpc_connection* conn, const uint8_t* buf, uint16_t len);
+    uint8_t (*_peek)(const urpc_connection* conn, uint8_t* buf, uint16_t len);
+    uint8_t (*_recv)(const urpc_connection* conn, uint8_t* buf, uint16_t len);
 } urpc_stub;
 
-uint8_t urpc_send(const urpc_stub *stub, const urpc_connection *conn, urpc_frame *frame);
-uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_frame *frame);
+uint8_t urpc_send(const urpc_stub* stub, const urpc_connection* conn, urpc_frame* frame);
+uint8_t urpc_recv(const urpc_stub* stub, const urpc_connection* conn, urpc_frame* frame);
 
-uint8_t urpc_set_payload(urpc_rpc *rpc, const char *payload, uint16_t len);
+uint8_t urpc_set_payload(urpc_rpc* rpc, const char* payload, uint16_t len);
 
-void print_frame(const urpc_frame *frame);
+void print_frame(const urpc_frame* frame);
 
-void _urpc_set_flag(urpc_rpc_header *rpc, uint8_t flags);
-void _urpc_clear_flag(urpc_rpc_header *rpc, uint8_t flags);
+void _urpc_set_flag(urpc_rpc_header* rpc, uint8_t flags);
+void _urpc_clear_flag(urpc_rpc_header* rpc, uint8_t flags);
 uint16_t _urpc_rpc_padded_size(uint16_t payload_length);
-uint8_t _urpc_crc8(const uint8_t *msg, uint32_t msg_len);
+uint8_t _urpc_crc8(const uint8_t* msg, uint32_t msg_len);
 
 #endif /* URPC_H_ */

@@ -17,22 +17,11 @@
 
 #include "urpc_eth_udp.h"
 
-/* Note that this would be PROGMEM for embedded platformds */
-const urpc_stub URPC_ETH_UDP_STUB = {
-    ._send       = &urpc_eth_udp_send,
-    ._peek       = &urpc_eth_udp_peek,
-    ._recv       = &urpc_eth_udp_recv,
-};
-
-const urpc_stub *urpc_eth_udp_get_stub(void) {
-    return &URPC_ETH_UDP_STUB;
-}
-
-uint8_t urpc_eth_udp_send(const urpc_connection *s_conn, const uint8_t *buf, uint16_t len) {
-    urpc_connection_eth_udp *conn = (urpc_connection_eth_udp *)s_conn;
+uint8_t urpc_eth_udp_send(const urpc_connection* s_conn, const uint8_t* buf, uint16_t len) {
+    urpc_connection_eth_udp* conn = (urpc_connection_eth_udp*)s_conn;
 
     if (sendto(conn->local.fd, buf, len, 0,
-            (struct sockaddr *)&(conn->remote.addr),
+            (struct sockaddr*)&(conn->remote.addr),
             sizeof(struct sockaddr_in)) == -1) {
         printf("Oops:sendto\n");
     }
@@ -40,22 +29,22 @@ uint8_t urpc_eth_udp_send(const urpc_connection *s_conn, const uint8_t *buf, uin
     return URPC_SUCCESS;
 }
 
-uint8_t urpc_eth_udp_peek(const urpc_connection *s_conn, uint8_t *buf, uint16_t len) {
-    urpc_connection_eth_udp *conn = (urpc_connection_eth_udp *)s_conn;
+uint8_t urpc_eth_udp_peek(const urpc_connection* s_conn, uint8_t* buf, uint16_t len) {
+    urpc_connection_eth_udp* conn = (urpc_connection_eth_udp*)s_conn;
 
     struct sockaddr_in address;
     socklen_t address_len = sizeof(struct sockaddr_in);
     ssize_t recv_bytes = 0;
     recv_bytes = recvfrom(conn->local.fd,
-            buf, len, MSG_PEEK, (struct sockaddr *)&address, &address_len);
+            buf, len, MSG_PEEK, (struct sockaddr*)&address, &address_len);
     if (recv_bytes == -1) {
         return URPC_ERROR;
     }
     return URPC_SUCCESS;
 }
 
-uint8_t urpc_eth_udp_recv(const urpc_connection *s_conn, uint8_t *buf, uint16_t len) {
-    urpc_connection_eth_udp *conn = (urpc_connection_eth_udp *)s_conn;
+uint8_t urpc_eth_udp_recv(const urpc_connection* s_conn, uint8_t* buf, uint16_t len) {
+    urpc_connection_eth_udp* conn = (urpc_connection_eth_udp*)s_conn;
 
     struct sockaddr_in address;
     socklen_t address_len = sizeof(struct sockaddr_in);
