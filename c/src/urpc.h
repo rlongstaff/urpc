@@ -23,10 +23,6 @@
 #define URPC_MAX_FRAME_CHUNKS 4
 #endif /* URPC_MAX_FRAME_CHUNKS */
 
-#ifndef URPC_MAX_CLIENTS
-#define URPC_MAX_CLIENTS 8
-#endif /* URPC_MAX_CLIENTS */
-
 #define _URPC_MAX_FRAME_SIZE URPC_MAX_FRAME_CHUNKS * _URPC_CHUNK_SIZE + sizeof(struct urpc_frame_header)
 
 #define _URPC_MAX_PAYLOAD_SIZE _URPC_MAX_FRAME_SIZE - sizeof(struct urpc_rpc_header) - sizeof(struct urpc_frame_header)
@@ -89,40 +85,18 @@ typedef struct urpc_connection {
      */
 } urpc_connection;
 
-typedef struct urpc_client {
-    urpc_connection *conn;
-} urpc_client;
-
-typedef struct urpc_server_conn {
-    uint8_t state;
-    urpc_connection *conn;
-} urpc_con_slot;
-
-typedef struct urpc_server {
-    urpc_endpoint *endpoint;
-    urpc_connection urpc_server_conn[URPC_MAX_CLIENTS];
-} urpc_server;
-
 typedef struct urpc_stub {
-    uint8_t (*init_client)(urpc_client *client);
-    uint8_t (*init_server)(urpc_server *server, urpc_endpoint *endpoint);
-    uint8_t (*accept)(urpc_server *server, urpc_connection *conn, urpc_frame *frame);
-    uint8_t (*connect)(urpc_client *client, urpc_connection *conn, urpc_frame *frame);
     uint8_t (*_send)(const urpc_connection *conn, const uint8_t *buf, uint16_t len);
     uint8_t (*_peek)(const urpc_connection *conn, uint8_t *buf, uint16_t len);
     uint8_t (*_recv)(const urpc_connection *conn, uint8_t *buf, uint16_t len);
 } urpc_stub;
 
-uint8_t urpc_init_client(const urpc_stub *stub, urpc_client *client);
-uint8_t urpc_init_server(const urpc_stub *stub, urpc_server *server, urpc_endpoint *endpoint);
-uint8_t urpc_accept(const urpc_stub *stub, urpc_server *server, urpc_connection *conn, urpc_frame *frame);
-uint8_t urpc_connect(const urpc_stub *stub, urpc_client *client, urpc_connection *conn, urpc_frame *frame);
 uint8_t urpc_send(const urpc_stub *stub, const urpc_connection *conn, urpc_frame *frame);
 uint8_t urpc_recv(const urpc_stub *stub, const urpc_connection *conn, urpc_frame *frame);
 
 uint8_t urpc_set_payload(urpc_rpc *rpc, const char *payload, uint16_t len);
 
-void _print_frame(const urpc_frame *frame);
+void print_frame(const urpc_frame *frame);
 
 void _urpc_set_flag(urpc_rpc_header *rpc, uint8_t flags);
 void _urpc_clear_flag(urpc_rpc_header *rpc, uint8_t flags);

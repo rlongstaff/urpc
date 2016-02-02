@@ -21,8 +21,8 @@
 #include <netinet/in.h>
 
 #include "cmocka.h"
-#include "urpc.h"
-#include "urpc_eth_udp.h"
+#include "urpc_eth_udp_client.h"
+#include "urpc_eth_udp_server.h"
 
 static void test_urpc_connect(void **state) {
     (void) state; /* unused */
@@ -34,7 +34,7 @@ static void test_urpc_connect(void **state) {
     bzero(&frame, sizeof(urpc_frame));
     bzero(&conn, sizeof(urpc_connection_eth_udp));
 
-    const urpc_stub *stub = urpc_eth_udp_get_stub();
+    const urpc_client_stub *stub = urpc_eth_udp_get_client_stub();
 
     char *ip = "127.0.0.1\0";
     conn.remote.addr.sin_port = htons(31415);
@@ -61,7 +61,8 @@ static void test_udp_send_recv(void **state) {
     bzero(&client_conn, sizeof(urpc_connection_eth_udp));
     bzero(&server_conn, sizeof(urpc_connection_eth_udp));
 
-    const urpc_stub *stub = urpc_eth_udp_get_stub();
+    const urpc_client_stub *client_stub = urpc_eth_udp_get_client_stub();
+    const urpc_server_stub *server_stub = urpc_eth_udp_get_server_stub();
 
     char *ip = "127.0.0.1\0";
     int port = 31415;
@@ -72,23 +73,23 @@ static void test_udp_send_recv(void **state) {
     server_conn.local.addr.sin_port = htons(port);
     inet_aton(ip, &(server_conn.local.addr.sin_addr));
 
-    assert_int_equal(urpc_init_client(stub, &client), URPC_SUCCESS);
-    assert_int_equal(urpc_init_server(stub, &server, (urpc_endpoint *)&server_conn.local), URPC_SUCCESS);
+    assert_int_equal(urpc_init_client(client_stub, &client), URPC_SUCCESS);
+    assert_int_equal(urpc_init_server(server_stub, &server, (urpc_endpoint *)&server_conn.local), URPC_SUCCESS);
 
-    uint8_t status = urpc_connect(stub, &client, (urpc_connection *)&client_conn, &client_frame);
+    uint8_t status = urpc_connect(client_stub, &client, (urpc_connection *)&client_conn, &client_frame);
     assert_int_equal(status, URPC_SUCCESS);
 
-    status = urpc_accept(stub, &server, (urpc_connection *)&server_conn, &server_frame);
+    status = urpc_accept(server_stub, &server, (urpc_connection *)&server_conn, &server_frame);
 
     char *payload = "abcdefghijklmnopqrstuvwxyz\0";
     urpc_set_payload(&(client_frame.rpc), payload, strlen(payload));
 
-    assert_int_equal(urpc_send(stub, (urpc_connection *)&client_conn, &client_frame), URPC_SUCCESS);
-    assert_int_equal(urpc_recv(stub, (urpc_connection *)&server_conn, &server_frame), URPC_SUCCESS);
+    assert_int_equal(urpc_send((urpc_stub *)client_stub, (urpc_connection *)&client_conn, &client_frame), URPC_SUCCESS);
+    assert_int_equal(urpc_recv((urpc_stub *)server_stub, (urpc_connection *)&server_conn, &server_frame), URPC_SUCCESS);
     assert_string_equal(payload, &(server_frame.rpc.payload));
     bzero(&client_frame, sizeof(urpc_frame));
-    assert_int_equal(urpc_send(stub, (urpc_connection *)&server_conn, &server_frame), URPC_SUCCESS);
-    assert_int_equal(urpc_recv(stub, (urpc_connection *)&client_conn, &client_frame), URPC_SUCCESS);
+    assert_int_equal(urpc_send((urpc_stub *)server_stub, (urpc_connection *)&server_conn, &server_frame), URPC_SUCCESS);
+    assert_int_equal(urpc_recv((urpc_stub *)client_stub, (urpc_connection *)&client_conn, &client_frame), URPC_SUCCESS);
     assert_string_equal(payload, &(client_frame.rpc.payload));
 }
 

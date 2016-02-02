@@ -24,10 +24,14 @@ urpc_test: urpc.o urpc_test.o
 		bin/urpc_test.o \
 		lib/cmocka/build/src/CMakeFiles/cmocka_shared.dir/cmocka.c.o
 
-urpc_test_eth_udp: urpc.o urpc_eth_udp.o urpc_eth_udp_test.o
+urpc_test_eth_udp: urpc.o urpc_client.o urpc_server.o urpc_eth_udp.o urpc_eth_udp_client.o urpc_eth_udp_server.o urpc_eth_udp_test.o
 	$(CC) $(CFLAGS) -I ${INCLUDE} -o bin/urpc_eth_udp_test \
 		bin/urpc.o \
+		bin/urpc_client.o \
+		bin/urpc_server.o \
 		bin/urpc_eth_udp.o \
+		bin/urpc_eth_udp_client.o \
+		bin/urpc_eth_udp_server.o \
 		bin/urpc_eth_udp_test.o \
 		lib/cmocka/build/src/CMakeFiles/cmocka_shared.dir/cmocka.c.o
 		
