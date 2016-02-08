@@ -5,6 +5,91 @@
 
 #include "urpc.h"
 
+urpc_handler _urpc_request_handlers[URPC_MAX_REQUEST_HANDLERS] = {0};
+urpc_handler _urpc_response_handlers[URPC_MAX_RESPONSE_HANDLERS] = {0};
+urpc_handler _urpc_control_request_handlers[_URPC_CONTROL_REQUEST_HANDLERS] = {0};
+urpc_handler _urpc_control_response_handlers[_URPC_CONTROL_RESPONSE_HANDLERS] = {0};
+
+uint8_t urpc_register_request_handler(urpc_handler handler, uint8_t rpc_id) {
+    if (rpc_id >= URPC_MAX_REQUEST_HANDLERS) {
+        return URPC_INVALID_HANDLER;
+    }
+    _urpc_request_handlers[rpc_id] = handler;
+    return URPC_SUCCESS;
+}
+
+uint8_t urpc_register_response_handler(urpc_handler handler, uint8_t rpc_id) {
+    if (rpc_id >= URPC_MAX_RESPONSE_HANDLERS) {
+        return URPC_INVALID_HANDLER;
+    }
+    _urpc_response_handlers[rpc_id] = handler;
+    return URPC_SUCCESS;
+}
+
+uint8_t _urpc_register_control_request_handler(urpc_handler handler, uint8_t rpc_id) {
+    if (rpc_id >= _URPC_CONTROL_REQUEST_HANDLERS) {
+        return URPC_INVALID_HANDLER;
+    }
+    _urpc_control_request_handlers[rpc_id] = handler;
+    return URPC_SUCCESS;
+}
+
+uint8_t _urpc_register_control_response_handler(urpc_handler handler, uint8_t rpc_id) {
+    if (rpc_id >= _URPC_CONTROL_RESPONSE_HANDLERS) {
+        return URPC_INVALID_HANDLER;
+    }
+    _urpc_control_response_handlers[rpc_id] = handler;
+    return URPC_SUCCESS;
+}
+
+void _urpc_clear_handlers(void) {
+    bzero(_urpc_request_handlers, sizeof(urpc_handler) * URPC_MAX_REQUEST_HANDLERS);
+    bzero(_urpc_response_handlers, sizeof(urpc_handler) * URPC_MAX_RESPONSE_HANDLERS);
+    bzero(_urpc_control_request_handlers, sizeof(urpc_handler) * _URPC_CONTROL_REQUEST_HANDLERS);
+    bzero(_urpc_control_response_handlers, sizeof(urpc_handler) * _URPC_CONTROL_RESPONSE_HANDLERS);
+}
+
+uint8_t _urpc_handle_rpc(urpc_frame* frame) {
+    if (frame->rpc.header.flags & URPC_RPC_FLAG_CONTROL) {
+        if(frame->rpc.header.flags & URPC_RPC_FLAG_RESPONSE) {
+            if (frame->rpc.header.rpc_num >= _URPC_CONTROL_RESPONSE_HANDLERS){
+                return URPC_INVALID_HANDLER;
+            }
+            if (_urpc_control_response_handlers[frame->rpc.header.rpc_num] == NULL) {
+                return URPC_INVALID_HANDLER;
+            }
+            (*_urpc_control_response_handlers[frame->rpc.header.rpc_num])(frame);
+        } else {
+            if (frame->rpc.header.rpc_num >= _URPC_CONTROL_REQUEST_HANDLERS){
+                return URPC_INVALID_HANDLER;
+            }
+            if (_urpc_control_request_handlers[frame->rpc.header.rpc_num] == NULL) {
+                return URPC_INVALID_HANDLER;
+            }
+            (*_urpc_control_request_handlers[frame->rpc.header.rpc_num])(frame);
+        }
+    } else {
+        if(frame->rpc.header.flags & URPC_RPC_FLAG_RESPONSE) {
+            if (frame->rpc.header.rpc_num >= URPC_MAX_RESPONSE_HANDLERS){
+                return URPC_INVALID_HANDLER;
+            }
+            if (_urpc_response_handlers[frame->rpc.header.rpc_num] == NULL) {
+                return URPC_INVALID_HANDLER;
+            }
+            (*_urpc_response_handlers[frame->rpc.header.rpc_num])(frame);
+        } else {
+            if (frame->rpc.header.rpc_num >= URPC_MAX_RESPONSE_HANDLERS){
+                return URPC_INVALID_HANDLER;
+            }
+            if (_urpc_request_handlers[frame->rpc.header.rpc_num] == NULL) {
+                return URPC_INVALID_HANDLER;
+            }
+            (*_urpc_request_handlers[frame->rpc.header.rpc_num])(frame);
+        }
+    }
+    return URPC_SUCCESS;
+}
+
 uint8_t urpc_send(const urpc_stub* stub, const urpc_connection* conn, urpc_frame* frame) {
     uint16_t payload_length = frame->rpc.header.payload_len;
 
@@ -30,12 +115,12 @@ uint8_t urpc_recv(const urpc_stub* stub, const urpc_connection* conn, urpc_frame
 
     uint8_t status = URPC_SUCCESS;
 
-    uint8_t peek_buf[sizeof(urpc_frame_header) + _URPC_CHUNK_SIZE];
+    uint8_t peek_buf[sizeof(urpc_frame_header) + URPC_CHUNK_SIZE];
     urpc_frame *peek_frame;
 
-    bzero(peek_buf, sizeof(urpc_frame_header) + _URPC_CHUNK_SIZE);
+    bzero(peek_buf, sizeof(urpc_frame_header) + URPC_CHUNK_SIZE);
 
-    stub->_peek(conn, peek_buf, sizeof(urpc_frame_header) + _URPC_CHUNK_SIZE);
+    stub->_peek(conn, peek_buf, sizeof(urpc_frame_header) + URPC_CHUNK_SIZE);
     peek_frame = (urpc_frame*) peek_buf;
     peek_frame->header.session = ntohl(peek_frame->header.session);
 
@@ -99,17 +184,22 @@ void print_frame(const urpc_frame* frame) {
     printf("===============\n");
 }
 
+inline uint8_t urpc_is_error(urpc_frame* frame) {
+    return frame->rpc.header.flags & URPC_RPC_FLAG_ERROR;
+}
+
 inline void _urpc_set_flag(urpc_rpc_header* rpc, uint8_t flags) {
     rpc->flags |= flags;
 }
+
 inline void _urpc_clear_flag(urpc_rpc_header* rpc, uint8_t flags) {
     rpc->flags &= ~flags;
 }
 
 inline uint16_t _urpc_rpc_padded_size(uint16_t payload_length) {
-    if ((sizeof(urpc_rpc_header) + payload_length) % _URPC_CHUNK_SIZE) {
-        return _URPC_CHUNK_SIZE -
-                ((sizeof(urpc_rpc_header) + payload_length) % _URPC_CHUNK_SIZE) +
+    if ((sizeof(urpc_rpc_header) + payload_length) % URPC_CHUNK_SIZE) {
+        return URPC_CHUNK_SIZE -
+                ((sizeof(urpc_rpc_header) + payload_length) % URPC_CHUNK_SIZE) +
                 (sizeof(urpc_rpc_header) + payload_length);
     }
     return (sizeof(urpc_rpc_header) + payload_length);
