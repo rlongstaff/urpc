@@ -1,9 +1,26 @@
+ABSTRACT
+    An RPC library targetted at microcontrollers with very limited resources
+    (as low as 512 bytes of RAM). It is designed to simplify the developer's
+    life when working with connectionless protocols or raw serial / RF links.
+    Compile-time options are available to select the best fit for the target
+    platform; Diffie-Hellman negotiated keys for AES on platforms with 2
+    kilobytes of RAM, or RKE systems with pre-shared keys / locally shared
+    keys on platforms with as little as 512 bytes of RAM.
+
+    The C library relies on no heap allocated memory, but allows for
+    developers to either statically allocate their objects on embedded
+    platforms or dynamically allocate if they wish to build for larger
+    systems.
+
+    If you're targeting a platform as large as the ARM Cortex M0 (64k RAM) or
+    higher, consider Google's Weave, uWeave, and Brillo products.
+
 GOALS
     Lightweight request/response protocol
-    Transport agnostic: bluetooth, UDP
+    Transport agnostic: bluetooth, UDP, TCP, Raw RF
     No heap allocations in C client/server
     Compile-time packet size/buffer overrides
-    Basic authentication
+    Basic authentication: PSK/DH
     Encryption support
     Client-driven version selection
     Bidirectional communication
@@ -16,7 +33,7 @@ Initial implementation
     64-byte packets by default
         64K max packets
     encryption optional for tiny platforms
-        PSK AES
+        PSK/DH; AES, Salsa20?
     16 byte block alignment for encryption
 
     RPC frame
@@ -25,7 +42,7 @@ Initial implementation
             1 byte: protocol flags
                 bit 0: encryption; default 1, encrypted
                 bit 1-?: encryption algorithm; default 0, AES
-            4 byte: key id (session)
+            4 byte: session id (key lookup)
         2 byte: payload length
         2 byte: request id
         1 byte: RPC #
@@ -91,4 +108,48 @@ both ends, transmit-only devices, and receive-only devices.
             Internal counters on each device will be set to a random number on
             initial synchronization. An error window of 50-100 with a resync
             window of 1000.
+
+Description of API layers
++=========================+
+|         User API        |
++=========================+
+|      Client / Server    |
++=================+       |
+|     Security    |       |
++=========================+
+|     uRPC Primitives     |
++=================+       |
+|    Encryption   |       |
++=========================+
+|    Transport            |
++=========================+
+
+User API
+    Provides access to message size, encryption options, security protocols,
+    transport layers, and managing client/server objects.
+Client / Server
+    Handles managing the connections/sessions
+Security Protocol
+    Handles key management, handshaking, counter synchronization and anything
+    related to authentication or authorization. Elliptic curve Diffe-Hellman
+    keys to secure Salsa20 via muNaCl for platforms with 2k+ or pre-shared
+    keys securing AES (avrcryptolib), possibly with an RKE scheme for
+    platforms with 512 bytes of RAM.
+uRPC Primitives
+    Handles uRPC frames; sending frames down to the Encryption and Transport
+    layers, receiving and validated frames.
+Encryption
+    Handles the actual transition to/from plaintext/ciphertext.
+    Both block- and stream-based ciphers are supported.
+Transport
+    Handles actually creating sockets (if needed) and putting raw
+    bytes on the wire / in the air. The uRPC frames are completely opaque to
+    this layer. Supported platforms will be:
+        UDP or TCP over standard Ethernet on *nix
+        UDP or TCP over Ethernet on Arduino shield
+        UDP or TCP over WiFi on 8266 w/ AT interface
+        UART serial
+        UART serial over raw radio
+
+
 
